@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 
-class FilterBảngCôngViệc extends Component {
+class FilterTable extends Component {
     render() {
         return (
             <tr>
@@ -23,4 +23,4 @@ class FilterBảngCôngViệc extends Component {
     }
 }
 
-export default FilterBảngCôngViệc;
+export default FilterTable;
