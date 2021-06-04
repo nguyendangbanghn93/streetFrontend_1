@@ -1,12 +1,10 @@
 import React, { Component } from 'react';
 import Ic from '../Ic';
-import { connect } from 'react-redux';
 import axios from 'axios';
-let oldData = {};
 class Form extends Component {
     constructor(props) {
         super(props);
-        this.state = { data: {} }
+        this.state = { data: {}, validateStatus: false }
     }
 
     changeInput = (e) => {
@@ -14,74 +12,86 @@ class Form extends Component {
         data[e.target.name] = e.target.value;
         this.setState({ data: data });
     }
-    clickLưu = () => {
-        const data = Object.assign(oldData,this.state.data);
-        const user = window.Helper.toEntity(data);
-        console.log(this.props.isEdit);
-        if (this.props.isEdit) {
-            console.log(user);
-            axios.put("/api/v1/users", user).then((r) => {
-                console.log(r)
-                this.props.loadData()
+    handleSave = () => {
+        const data = this.state.data;
+        if (data.name && data.status && data.districtId) {
+
+            if (data.founding) {
+                data.founding = window.Helper.toMillis(data.founding)
+            }
+            this.setState({ ...this.state, validateStatus: false });
+            axios.post("/api/v1/streets", data).then((res) => {
+                console.log(res.data)
+                this.props.reloadStreetData();
+            }).catch((error) => {
+                console.error(error);
             })
+            this.props.close()
         } else {
-            axios.post("/api/v1/users", user).then((r) => {
-                this.props.loadData()
-            })
+            this.setState({ ...this.state, validateStatus: true });
+        }
+    }
+
+    renderSelectDistrict() {
+        if (this.props.dataDistrict != null) {
+            return (
+                <select onChange={e => this.changeInput(e)} name="districtId" className="pa10 w1 b1sd bra5">
+                    <option>Chọn</option>
+                    {this.props.dataDistrict.map(d => <option key={d.id} value={d.id}>{d.name}</option>)}
+                </select>
+            )
+        }
+        return null;
+    }
+    renderValidate() {
+        if (this.state.validateStatus) {
+            return <span className="crd ml5">* Yêu cầu nhập đầy đủ các trường thông tin bắt buộc</span>
+        } else {
+            return <span className="crd fwb ml5">*</span>
         }
     }
     render() {
-        let data = {};
-        if (this.props.dataEntity && Object.keys(this.props.dataEntity).length > 0) {
-            oldData = { ...window.Helper.toData(this.props.dataEntity) };
-            data = { ...window.Helper.toData(this.props.dataEntity) }
-            data.birthday = window.Helper.formatDate(data.birthday, "{f}-{n}-{j}");
-        }
         return (
             <div className="pf t0 l0 r0 b0 bgc07 df fdc jcsc aic">
                 <div className="bra5 oh bw1 bss bce bgcf col-xs-12 col-md-8">
                     <div className="bb1 bss bce pa5 df jcsb bg2 pa10">
-                        <div className="cf fwb">Add</div>
-                        <Ic icon="close::pa3,bấmĐc,cf,mr5" onClick={() => { this.props.editShowForm(false) }} />
+                        <div onClick={this.props.reloadDistrict} className="cf fwb">Add Street</div>
+                        <Ic icon="close::pa3,bấmĐc,cf,mr5" onClick={() => { this.props.close() }} />
                     </div>
                     <div>
-
-                        <div className="pa10 fwb">Username:</div>
+                        <div className="pa10 fwb">Name street:{this.renderValidate()}</div>
                         <div className="plr10">
-                            <input defaultValue={window.Helper.has('username', data)} onChange={e => this.changeInput(e)} type="text" name="username" className="pa10 w1 b1sd bra5" />
+                            <input onChange={e => this.changeInput(e)} type="text" name="name" className="pa10 w1 b1sd bra5" />
                         </div>
 
-                        <div className="pa10 fwb">Password:</div>
+                        <div className="pa10 fwb">Founding:</div>
                         <div className="plr10">
-                            <input defaultValue={window.Helper.has('password', data)} onChange={e => this.changeInput(e)} type="text" name="password" className="pa10 w1 b1sd bra5" />
+                            <input onChange={e => this.changeInput(e)} type="date" name="founding" className="pa10 w1 b1sd bra5" />
                         </div>
 
-                        <div className="pa10 fwb">Fullname:</div>
+                        <div className="pa10 fwb">Description:</div>
                         <div className="plr10">
-                            <input defaultValue={window.Helper.has('fullname', data)} onChange={e => this.changeInput(e)} type="text" name="fullname" className="pa10 w1 b1sd bra5" />
+                            <input onChange={e => this.changeInput(e)} type="text" name="description" className="pa10 w1 b1sd bra5" />
                         </div>
 
-                        <div className="pa10 fwb">Birthday:</div>
+                        <div className="pa10 fwb">Status:{this.renderValidate()}</div>
                         <div className="plr10">
-                            <input defaultValue={window.Helper.has('birthday', data)} onChange={e => this.changeInput(e)} type="date" name="birthday" className="pa10 w1 b1sd bra5" />
-                        </div>
-
-                        <div className="pa10 fwb">Phone:</div>
-                        <div className="plr10">
-                            <input defaultValue={window.Helper.has('phone', data)} onChange={e => this.changeInput(e)} type="text" name="phone" className="pa10 w1 b1sd bra5" />
-                        </div>
-
-                        <div className="pa10 fwb">Status:</div>
-                        <div className="plr10">
-                            <select defaultValue={window.Helper.has('status', data) || 1} onChange={e => this.changeInput(e)} name="status" className="pa10 w1 b1sd bra5" id="">
-                                <option value={1}>Active</option>
-                                <option value={0}>Deactive</option>
-                                <option value={-1}>Delete</option>
+                            <select onChange={e => this.changeInput(e)} name="status" className="pa10 w1 b1sd bra5">
+                                <option>Chọn</option>
+                                <option value={0}>Đang thi công</option>
+                                <option value={1}>Đang sử dụng</option>
+                                <option value={2}>Đang tu sửa</option>
                             </select>
                         </div>
+
+                        <div className="pa10 fwb">District:{this.renderValidate()}</div>
+                        <div className="plr10">
+                            {this.renderSelectDistrict()}
+                        </div>
+
                         <div className="mt15 pa10 grid tar">
-                            <Ic onClick={() => { this.clickLưu() }} className="btn bn bg2 cf pa10 ml10 bra5" icon="save::pa3,cf,mr5" text="Lưu" />
-                            <Ic onClick={() => { this.props.editShowForm(false) }} className="btn bn bg5 cf pa10 ml10 bra5" icon="close::pa3,cf,mr5" text="Hủy" />
+                            <Ic onClick={(e) => { this.handleSave(e) }} className="btn bn bg2 cf pa10 ml10 bra5" icon="save::pa3,cf,mr5" text="Lưu" />
+                            <Ic onClick={() => { this.props.close() }} className="btn bn bg5 cf pa10 ml10 bra5" icon="close::pa3,cf,mr5" text="Hủy" />
                         </div>
                     </div>
                 </div>
@@ -89,23 +99,5 @@ class Form extends Component {
         );
     }
 }
-const mapStateToProps = (state, ownProps) => {
-    return {
-        dataEntity: state.dataEntity,
-        isEdit: state.isEdit,
-    }
-}
-const mapDispatchToProps = (dispatch, ownProps) => {
-    return {
-        editShowForm: (showForm) => {
-            dispatch({ type: "editShowForm", showForm: showForm });
-        },
-        addData: (data) => {
-            dispatch({ type: "addData", data: data });
-        },
-        loadData: () => {
-            dispatch({ type: "loadData", statusLoadData: true });
-        },
-    }
-}
-export default connect(mapStateToProps, mapDispatchToProps)(Form)
+
+export default Form;

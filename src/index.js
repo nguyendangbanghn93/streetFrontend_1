@@ -39,12 +39,17 @@ window.Helper = new function () {
         case "{f}-{n}-{j}":
           str = o.f + "-" + o.n + "-" + o.j;
           return str;
+        default:
+          return o.j + "/" + o.n + "/" + o.f;
       }
-      return o.j + "/" + o.n + "/" + o.f;
+
     } else {
       return str;
     }
   };
+  this.toMillis = (strDate) => {
+    return new Date(strDate) * 1;
+  }
   this.toEntity = function (data) {
     let entity = {};
     entity.id = data.idUser;
